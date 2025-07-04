@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+/* Set default styles to none */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+.theme-scrollbar {
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+      border-radius: 10px;
+
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #1f3737;
+    border-radius: 10px;
+
+  }
+
+  &::-webkit-scrollbar-thumb {
+    width: 10px;
+    background: #122424;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background:  #1f3737;
+  }
+}
+
+:root {
+  --theme-bg: #1a202c344;
+  --theme-tcg: #ffffff;
+  --theme-text: #ffffff;
+  --theme-tc: #000000;
+  --theme-bgg: #4a5568;
+  --theme-border: #4a5568;
+}
+
+.light-mode {
+  --theme-bg: #ffffff;
+  --theme-text: #000000;
+  --theme-tcg: #000000;
+  --theme-tc: #ffffff;
+  --theme-bgg: #ffffff;
+  --theme-border: #cbd5e0;
+}
+
+@layer utilities {
+  .theme-bg {
+    background-color: var(--theme-bg);
+  }
+  .theme-text {
+    color: var(--theme-text);
+  }
+    .theme-bgg {
+    background-color: var(--theme-bgg);
+    border: 1px solid var(--theme-border);
+  }
+    .theme-tc {
+    color: var(--theme-tc);
+  }
+      .theme-tcg {
+    background-color: var(--theme-tcg);
+  }
+}
