@@ -7,14 +7,13 @@ function Front() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="flex flex-col p-0 -m-4">
-      <div className="p-0">
-        <Header1 searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-        <ChatList searchQuery={searchQuery} />
-      </div>
+    <div className="flex flex-col h-[calc(100%+1rem)] -m-4 mb-0 theme-text">
+      <Header1 searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <ChatList searchQuery={searchQuery} />
 
-      <div className="absolute bottom-16 right-4">
-        <button className="flex items-center justify-center w-14 h-14 bg-green-500 text-white rounded-full hover:bg-green-600">
+
+      <div className="fixed bottom-24 right-6 z-50">
+        <button className="flex items-center justify-center w-14 h-14 bg-green-500 text-white rounded-full hover:bg-green-600 shadow-lg">
           <FaPlus className="w-6 h-6" />
         </button>
       </div>
