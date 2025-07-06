@@ -10,13 +10,27 @@ function CameraButton({ className = "", onSend = () => {} }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
+  const requestStream = async () => {
+    const tries = [
+      { video: { facingMode: { ideal: facing } }, audio: false },
+      { video: true, audio: false },
+    ];
+    for (let c of tries) {
+      try {
+        return await navigator.mediaDevices.getUserMedia(c);
+      } catch (_) {}
+    }
+    throw new Error("no-camera");
+  };
+
   const openCamera = async () => {
-    if (stream) stream.getTracks().forEach((t) => t.stop());
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    setShowError(false);
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: facing } },
-        audio: false,
-      });
+      const mediaStream = await requestStream();
       setStream(mediaStream);
       setShowPreview(true);
       if (videoRef.current) {
@@ -29,8 +43,11 @@ function CameraButton({ className = "", onSend = () => {} }) {
   };
 
   const closeAll = () => {
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    setStream(null);
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
     setShowPreview(false);
     setShowError(false);
     setShot(null);
@@ -46,13 +63,12 @@ function CameraButton({ className = "", onSend = () => {} }) {
     c.toBlob((b) => setShot(b), "image/jpeg", 0.9);
   };
 
-  const retake = () => setShot(null);
-
   const send = () => {
     if (shot) onSend(shot);
     closeAll();
   };
 
+  const retake = () => setShot(null);
   const toggleFacing = () =>
     setFacing((f) => (f === "user" ? "environment" : "user"));
 
@@ -126,7 +142,7 @@ function CameraButton({ className = "", onSend = () => {} }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
           <div className="w-[90vw] max-w-sm rounded-xl bg-white px-6 py-8 text-center shadow-lg">
             <p className="mb-6 text-lg font-semibold text-black">
-              This device has no camera function.
+              This device has no camera function or permission is blocked.
             </p>
             <button
               onClick={closeAll}
