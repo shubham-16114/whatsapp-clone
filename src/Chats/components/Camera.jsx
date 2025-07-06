@@ -10,32 +10,33 @@ function CameraButton({ className = "", onSend = () => {} }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const requestStream = async () => {
+  const stopStream = (s) => s && s.getTracks().forEach((t) => t.stop());
+
+  const getStream = async () => {
     const tries = [
       { video: { facingMode: { ideal: facing } }, audio: false },
       { video: true, audio: false },
     ];
-    for (let c of tries) {
+    for (const c of tries) {
       try {
         return await navigator.mediaDevices.getUserMedia(c);
       } catch (_) {}
     }
-    throw new Error("no-camera");
+    throw Error();
   };
 
   const openCamera = async () => {
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      setStream(null);
-    }
+    stopStream(stream);
+    setStream(null);
     setShowError(false);
     try {
-      const mediaStream = await requestStream();
-      setStream(mediaStream);
+      const s = await getStream();
+      setStream(s);
       setShowPreview(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+      const v = videoRef.current;
+      if (v) {
+        v.srcObject = s;
+        v.onloadedmetadata = () => v.play().catch(() => {});
       }
     } catch {
       setShowError(true);
@@ -43,10 +44,8 @@ function CameraButton({ className = "", onSend = () => {} }) {
   };
 
   const closeAll = () => {
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      setStream(null);
-    }
+    stopStream(stream);
+    setStream(null);
     if (videoRef.current) videoRef.current.srcObject = null;
     setShowPreview(false);
     setShowError(false);
@@ -54,8 +53,8 @@ function CameraButton({ className = "", onSend = () => {} }) {
   };
 
   const capture = () => {
-    const v = videoRef.current;
-    const c = canvasRef.current;
+    const v = videoRef.current,
+      c = canvasRef.current;
     if (!v || !c) return;
     c.width = v.videoWidth;
     c.height = v.videoHeight;
@@ -72,11 +71,7 @@ function CameraButton({ className = "", onSend = () => {} }) {
   const toggleFacing = () =>
     setFacing((f) => (f === "user" ? "environment" : "user"));
 
-  useEffect(() => {
-    return () => {
-      if (stream) stream.getTracks().forEach((t) => t.stop());
-    };
-  }, [stream]);
+  useEffect(() => () => stopStream(stream), [stream]);
 
   return (
     <>
@@ -87,8 +82,10 @@ function CameraButton({ className = "", onSend = () => {} }) {
           <div className="w-[90vw] max-w-sm rounded-xl bg-gray-900 p-4 flex flex-col items-center">
             <video
               ref={videoRef}
-              className="w-full aspect-video rounded-lg object-cover"
+              autoPlay
               playsInline
+              muted
+              className="w-full aspect-video rounded-lg object-cover"
             />
             <div className="mt-4 flex gap-4">
               <button
@@ -142,7 +139,7 @@ function CameraButton({ className = "", onSend = () => {} }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
           <div className="w-[90vw] max-w-sm rounded-xl bg-white px-6 py-8 text-center shadow-lg">
             <p className="mb-6 text-lg font-semibold text-black">
-              This device has no camera function or permission is blocked.
+              Camera unavailable or permission denied.
             </p>
             <button
               onClick={closeAll}
