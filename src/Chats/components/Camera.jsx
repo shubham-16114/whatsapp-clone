@@ -2,24 +2,16 @@ import React, { useRef, useState, useEffect } from "react";
 import { FaCamera } from "react-icons/fa";
 
 export default function CameraButton({ onSend = () => {}, className = "" }) {
-  const fileInput = useRef(null);
   const [manual, setManual] = useState(false);
   const [stream, setStream] = useState(null);
   const [shot, setShot] = useState(null);
+  const [noCamera, setNoCamera] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
   const stop = (s) => s && s.getTracks().forEach((t) => t.stop());
 
-  const chooseNative = () => fileInput.current?.click();
-
-  const fileChosen = (e) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      onSend(f);
-      e.target.value = "";
-    } else setManual(true);
-  };
+  const trigger = () => setManual(true);
 
   useEffect(() => {
     if (manual && !stream) {
@@ -33,7 +25,10 @@ export default function CameraButton({ onSend = () => {}, className = "" }) {
             v.onloadedmetadata = () => v.play().catch(() => {});
           }
         })
-        .catch(() => setManual(false));
+        .catch(() => {
+          setManual(false);
+          setNoCamera(true);
+        });
     }
   }, [manual, stream]);
 
@@ -63,16 +58,7 @@ export default function CameraButton({ onSend = () => {}, className = "" }) {
 
   return (
     <>
-      <FaCamera onClick={chooseNative} className={`cursor-pointer ${className}`} />
-
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={fileChosen}
-      />
+      <FaCamera onClick={trigger} className={`cursor-pointer ${className}`} />
 
       {manual && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black">
@@ -122,6 +108,22 @@ export default function CameraButton({ onSend = () => {}, className = "" }) {
             </>
           )}
           <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
+
+      {noCamera && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-lg p-6 flex flex-col items-center">
+            <p className="mb-4 text-gray-800 text-center">
+              Your device does not have a camera
+            </p>
+            <button
+              onClick={() => setNoCamera(false)}
+              className="px-6 py-2 bg-blue-600 text-white rounded"
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
     </>
