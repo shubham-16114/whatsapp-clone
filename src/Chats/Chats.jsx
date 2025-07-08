@@ -18,7 +18,7 @@ function Front() {
         </button>
       </div> */}
     </div>
-  );
+  )
 }
 
 export default Front;
