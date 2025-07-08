@@ -1,54 +1,43 @@
 import React, { useRef, useState, useEffect } from "react";
 import { FaCamera } from "react-icons/fa";
 
-function CameraButton({ className = "", onSend = () => {} }) {
+export default function CameraButton({ onSend = () => {}, className = "" }) {
+  const [manual, setManual] = useState(false);
   const [stream, setStream] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [showError, setShowError] = useState(false);
   const [shot, setShot] = useState(null);
-  const [facing, setFacing] = useState("environment");
+  const [noCamera, setNoCamera] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const stopStream = (s) => s && s.getTracks().forEach((t) => t.stop());
+  const stop = (s) => s && s.getTracks().forEach((t) => t.stop());
 
-  const getStream = async () => {
-    const tries = [
-      { video: { facingMode: { ideal: facing } }, audio: false },
-      { video: true, audio: false },
-    ];
-    for (const c of tries) {
-      try {
-        return await navigator.mediaDevices.getUserMedia(c);
-      } catch (_) {}
+  const trigger = () => setManual(true);
+
+  useEffect(() => {
+    if (manual && !stream) {
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: { ideal: "environment" } } })
+        .then((s) => {
+          setStream(s);
+          const v = videoRef.current;
+          if (v) {
+            v.srcObject = s;
+            v.onloadedmetadata = () => v.play().catch(() => {});
+          }
+        })
+        .catch(() => {
+          setManual(false);
+          setNoCamera(true);
+        });
     }
-    throw Error();
-  };
+  }, [manual, stream]);
 
-  const openCamera = async () => {
-    stopStream(stream);
-    setStream(null);
-    setShowError(false);
-    try {
-      const s = await getStream();
-      setStream(s);
-      setShowPreview(true);
-      const v = videoRef.current;
-      if (v) {
-        v.srcObject = s;
-        v.onloadedmetadata = () => v.play().catch(() => {});
-      }
-    } catch {
-      setShowError(true);
-    }
-  };
+  useEffect(() => () => stop(stream), [stream]);
 
-  const closeAll = () => {
-    stopStream(stream);
+  const close = () => {
+    stop(stream);
     setStream(null);
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setShowPreview(false);
-    setShowError(false);
+    setManual(false);
     setShot(null);
   };
 
@@ -64,96 +53,79 @@ function CameraButton({ className = "", onSend = () => {} }) {
 
   const send = () => {
     if (shot) onSend(shot);
-    closeAll();
+    close();
   };
-
-  const retake = () => setShot(null);
-  const toggleFacing = () =>
-    setFacing((f) => (f === "user" ? "environment" : "user"));
-
-  useEffect(() => () => stopStream(stream), [stream]);
 
   return (
     <>
-      <FaCamera onClick={openCamera} className={`cursor-pointer ${className}`} />
+      <FaCamera onClick={trigger} className={`cursor-pointer ${className}`} />
 
-      {showPreview && !shot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="w-[90vw] max-w-sm rounded-xl bg-gray-900 p-4 flex flex-col items-center">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full aspect-video rounded-lg object-cover"
-            />
-            <div className="mt-4 flex gap-4">
-              <button
-                onClick={capture}
-                className="h-14 w-14 rounded-full border-4 border-white"
+      {manual && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black">
+          {!shot ? (
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
               />
-              <button
-                onClick={toggleFacing}
-                className="rounded-lg bg-gray-700 px-4 py-2 text-white"
-              >
-                ↻
-              </button>
-              <button
-                onClick={closeAll}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+              <div className="absolute bottom-10 w-full flex justify-center gap-8">
+                <button
+                  onClick={capture}
+                  className="h-16 w-16 rounded-full border-4 border-white"
+                />
+                <button
+                  onClick={close}
+                  className="px-6 py-3 bg-blue-600 rounded text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <img
+                src={URL.createObjectURL(shot)}
+                alt=""
+                className="w-full h-full object-contain"
+              />
+              <div className="absolute bottom-10 w-full flex justify-center gap-8">
+                <button
+                  onClick={() => setShot(null)}
+                  className="px-6 py-3 bg-gray-700 rounded text-white"
+                >
+                  Retake
+                </button>
+                <button
+                  onClick={send}
+                  className="px-6 py-3 bg-green-600 rounded text-white"
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          )}
+          <canvas ref={canvasRef} className="hidden" />
         </div>
       )}
 
-      {showPreview && shot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="w-[90vw] max-w-sm rounded-xl bg-gray-900 p-4 flex flex-col items-center">
-            <img
-              src={URL.createObjectURL(shot)}
-              alt="preview"
-              className="w-full aspect-video rounded-lg object-contain"
-            />
-            <div className="mt-4 flex gap-4">
-              <button
-                onClick={retake}
-                className="rounded-lg bg-gray-700 px-4 py-2 text-white"
-              >
-                Retake
-              </button>
-              <button
-                onClick={send}
-                className="rounded-lg bg-green-600 px-4 py-2 text-white"
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showError && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="w-[90vw] max-w-sm rounded-xl bg-white px-6 py-8 text-center shadow-lg">
-            <p className="mb-6 text-lg font-semibold text-black">
-              Camera unavailable or permission denied.
+      {noCamera && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white rounded-lg p-6 flex flex-col items-center">
+            <p className="mb-4 text-gray-800 text-center">
+              Your device does not have a camera
             </p>
             <button
-              onClick={closeAll}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-white"
+              onClick={() => setNoCamera(false)}
+              className="px-6 py-2 bg-blue-600 text-white rounded"
             >
               OK
             </button>
           </div>
         </div>
       )}
-
-      <canvas ref={canvasRef} className="hidden" />
     </>
   );
 }
-
-export default CameraButton;
