@@ -50,7 +50,7 @@ function Viewer({ files, idx, setIdx, markSeen }) {
 
   const next = () => {
     if (idx + 1 < files.length) setIdx(idx + 1);
-    else setIdx(-1); // close after last
+    else setIdx(-1); 
   };
 
   const close = (e) => {
@@ -97,8 +97,8 @@ export default function StatusFunc() {
 
   const open = () => {
     if (files.length === 0) return;
-    if (seen >= files.length) setIdx(0); // all seen, start over
-    else setIdx(seen); // start from next unviewed
+    if (seen >= files.length) setIdx(0); 
+    else setIdx(seen); 
   };
 
   return (
